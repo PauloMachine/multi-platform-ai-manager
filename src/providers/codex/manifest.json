@@ -1,0 +1,9 @@
+{
+  "provider": "codex",
+  "name": "Codex",
+  "detect": "codex --version",
+  "auth": "codex login status",
+  "connect": "codex login",
+  "usage": "TUI only (/usage) — no official CLI JSON export",
+  "hooks": "~/.codex/hooks.json"
+}

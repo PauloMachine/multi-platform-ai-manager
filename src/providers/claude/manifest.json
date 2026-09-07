@@ -1,0 +1,9 @@
+{
+  "provider": "claude",
+  "name": "Claude Code",
+  "detect": "claude --version",
+  "auth": "claude auth status",
+  "connect": "claude auth login",
+  "usage": "statusline hook → ~/.multi-platform-ai-manager/claude-usage.json",
+  "hooks": "~/.claude/settings.json"
+}

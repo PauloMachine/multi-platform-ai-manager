@@ -1,0 +1,35 @@
+[package]
+name = "multi-platform-ai-manager"
+version = "0.1.0"
+description = "Local-first multi-platform AI tools manager"
+authors = ["Multi-platform AI Manager"]
+edition = "2021"
+
+[lib]
+name = "multi_platform_ai_manager_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["tray-icon", "image-png"] }
+tauri-plugin-opener = "2"
+tauri-plugin-notification = "2"
+tauri-plugin-shell = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1", features = ["v4", "serde"] }
+tokio = { version = "1", features = ["sync", "time", "macros", "rt-multi-thread"] }
+notify = "8"
+dirs = "6"
+thiserror = "2"
+parking_lot = "0.12"
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = 3
+panic = "abort"
+strip = true

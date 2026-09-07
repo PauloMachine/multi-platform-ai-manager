@@ -1,0 +1,8 @@
+{
+  "provider": "cursor",
+  "name": "Cursor",
+  "detect": "Cursor.app / cursor-agent",
+  "auth": "cursor-agent status / cursor-agent login",
+  "usage": "unavailable for individual accounts (official)",
+  "hooks": "~/.cursor/hooks.json"
+}
