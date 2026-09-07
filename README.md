@@ -10,9 +10,50 @@
 
 | Requirement | Minimum version |
 |-------------|-----------------|
-| Node.js | 18+ |
+| Node.js | 22+ (LTS — see `.nvmrc`) |
 | Rust | 1.70+ (install via [rustup](https://rustup.rs)) |
 | macOS | 13+ (Windows 10+ also supported) |
+
+Use Node 22 locally:
+
+```bash
+nvm install    # reads .nvmrc (22)
+nvm use
+node --version
+```
+
+### Windows setup (required for `npm run tauri dev`)
+
+If you see **`cargo metadata: program not found`**, Rust is missing or not on your PATH.
+
+1. Install Rust: download [rustup-init.exe](https://win.rustup.rs/x86_64) and run it (default options are fine)
+2. Install **Visual Studio Build Tools** with the **Desktop development with C++** workload ([download](https://visualstudio.microsoft.com/visual-cpp-build-tools/)) — required to compile Tauri on Windows
+3. **Close and reopen** your terminal and Cursor/VS Code (PATH is only refreshed on restart)
+4. Verify:
+
+```powershell
+cargo --version
+rustc --version
+node --version
+```
+
+You should see version numbers for all three. Then:
+
+```powershell
+npm install
+npm run tauri dev
+```
+
+If `cargo` still fails, add `%USERPROFILE%\.cargo\bin` to your system PATH manually, then restart the terminal.
+
+### macOS / Linux — verify Rust
+
+```bash
+cargo --version
+rustc --version
+```
+
+Install via [rustup](https://rustup.rs) if missing.
 
 ### Provider CLIs (optional, but recommended)
 

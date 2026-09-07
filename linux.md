@@ -1,58 +1,71 @@
-# Linux Development Environment Plan
+# Linux Development Environment
 
-This document outlines the plan to set up a Docker-based development environment for the `multi-platform-ai-manager` repository, mimicking the workflow used in `llm-sandbox`.
+Docker-based dev environment for contributors on Linux. **The recommended way to run the full desktop app on Linux is still a native install** (Rust + Tauri system deps). Docker is mainly useful for frontend dev and consistent tooling.
 
-## 1. Development Environment Setup
+## Quick start
 
-### Dockerfile
-We will create a `Dockerfile` based on Ubuntu that provides all necessary tools for Tauri development.
+```bash
+make build
+make run          # shell inside container — run npm install, cargo check, etc.
+make dev          # Vite only at http://localhost:1420
+```
 
-**Required Tools:**
-- **Node.js**: Start with version 18 (as currently used), then upgrade to LTS.
-- **Rust**: Install the latest stable Rust toolchain via `rustup`.
-- **Tauri Dependencies**:
-    - `build-essential`, `curl`, `wget`, `file`, `libssl-dev`, `libgtk-3-dev`, `libayatana-appindicator3-dev`, `librsvg2-dev`, `webkit2gtk-4.1-dev`.
-- **Utilities**: `git`, `make`, `vim`, `jq`, `htop`.
-- **User**: Create a non-root user `devuser` (UID/GID 2000) to avoid permission issues with host mounts.
+For the **full Tauri window** on Linux, install deps natively (see [Tauri prerequisites](https://v2.tauri.app/start/prerequisites/)) and run:
 
-### Makefile
-We will create a `Makefile` to encapsulate common Docker commands.
+```bash
+npm install
+npm run tauri dev
+```
 
-**Targets:**
-- `make build`: Builds the development image.
-- `make run`: Launches an interactive bash shell in the container with the current directory mounted.
-- `make dev`: Runs `npm run dev` (Vite) inside the container.
-- `make tauri-dev`: Runs `npm run tauri dev` inside the container.
-- `make clean`: Removes the local Docker image.
+`make tauri-dev` forwards X11 and may work with `xhost +local:` on the host, but native `npm run tauri dev` is more reliable.
 
-## 2. Verification & Iteration
+## What broke in PR #1 (and fixes)
 
-1. **Build & Launch**:
-    - Execute `make build`.
-    - Execute `make run` and verify `node`, `npm`, `rustc`, and `cargo` are available.
-2. **App Startup**:
-    - Attempt to run the frontend dev server (`make dev`).
-    - Verify the build process for Tauri works within the container.
+| Issue | Cause | Fix |
+|-------|--------|-----|
+| `npm install` / Vite crash on Linux | `package-lock.json` was regenerated on macOS, stripping `libc` metadata needed for Linux native bindings (`@rolldown/*`, `@tailwindcss/oxide`, etc.) | Restore lockfile with `libc` entries; **do not run `npm install` on macOS and commit lockfile without a Linux check** |
+| `make dev` unreachable | Makefile mapped port **5173**; Vite uses **1420** | Map `1420:1420` and set `TAURI_DEV_HOST=0.0.0.0` |
+| Tauri in Docker | GUI needs display + WebKit/GTK on host | Use native `tauri dev`, or X11-forwarded `make tauri-dev` |
+| Node 22 in Docker only | Dockerfile pins Node 22; `package.json` `engines` and `.nvmrc` also require **Node 22+** |
 
-## 3. Node.js LTS Upgrade
+## Dockerfile
 
-Once the basic environment is verified:
-1. Update the `Dockerfile` to use the latest supported Node.js LTS version (e.g., Node 20 or 22).
-2. Rebuild the image (`make build`).
-3. Verify that the application still builds and runs correctly.
-4. Update `package.json` or `.nvmrc` if applicable to reflect the new version.
+Ubuntu 24.04 with Node 22, Rust (global `/opt/rust/cargo`), and Tauri build libraries (`webkit2gtk`, `libgtk-3`, etc.).
 
-## 4. Delivery
+## Makefile targets
 
-- All changes will be submitted via a draft Pull Request.
-- The PR will include the `linux.md` spec, `Dockerfile`, `Makefile`, and the Node.js upgrade.
+| Target | Description |
+|--------|-------------|
+| `make build` | Build `ai-manager-dev:latest` image |
+| `make run` | Interactive bash, repo mounted at `/workspace` |
+| `make dev` | Vite dev server on port 1420 |
+| `make tauri-dev` | Tauri dev (needs X11 on host) |
+| `make clean` | Remove local image |
 
-## Action Items
-- [ ] Create `linux.md` (Done)
-- [ ] Create draft PR with `linux.md`
-- [ ] Implement `Dockerfile`
-- [ ] Implement `Makefile`
-- [ ] Verify `make build` and `make run`
-- [ ] Verify app starts on Linux (within container)
-- [ ] Upgrade Node.js to LTS
-- [ ] Finalize and submit PR
+## Lockfile policy
+
+`package-lock.json` is **cross-platform**. After changing dependencies:
+
+1. Run `npm install` on Linux (or in `make run`), or
+2. Verify with `npm ci && npm run build` on Linux before merging lockfile changes from macOS.
+
+Regenerating the lockfile only on macOS removes Linux `libc` hints and breaks installs on glibc/musl systems. Prefer:
+
+```bash
+make build
+make lockfile   # npm install inside the Linux container
+```
+
+## Native Linux checklist
+
+Requires **Node.js 22+** (`nvm install` / `nvm use` — see `.nvmrc`).
+
+```bash
+# System deps (Debian/Ubuntu) — see Tauri docs for your distro
+sudo apt install libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev
+
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+nvm use    # or: fnm use / mise use
+npm install
+npm run tauri dev
+```
